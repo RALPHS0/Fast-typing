@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Challenge</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Roboto Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: radial-gradient(circle at center, #0a0a0f 0%, #000000 80%);
+            color: #eee;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 95%;
+            max-width: 400px;
+            height: 90vh;
+            background: rgba(15, 15, 25, 0.9);
+            border: 2px solid #3f006f;
+            border-radius: 20px;
+            box-shadow: 0 0 30px #6b00ff88, inset 0 0 15px #200040;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative;
+        }
+
+        #game-container::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        #game-ui, #game-over-screen {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+        }
+
+        .font-big {
+            font-size: 2.5rem;
+            font-family: 'Cinzel Decorative', serif;
+            color: #b9a6ff;
+            text-shadow: 0 0 15px #6b00ff;
+        }
+
+        .font-mid {
+            font-size: 1.5rem;
+            color: #dcdcdc;
+            text-shadow: 0 0 8px #3a0066;
+        }
+
+        .font-small {
+            font-size: 1.1rem;
+            color: #aaa;
+            text-shadow: 0 0 5px #2a0040;
+        }
+
+        #current-word-display {
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background: rgba(30, 0, 60, 0.4);
+            border-radius: 10px;
+            box-shadow: 0 0 10px #6b00ff66;
+            min-height: 60px;
+        }
+
+        #input-area {
+            width: 85%;
+            padding: 12px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid #6b00ff;
+            border-radius: 8px;
+            background: rgba(0, 0, 30, 0.8);
+            color: #fff;
+            outline: none;
+            box-shadow: 0 0 10px #6b00ff66;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        #input-area:focus {
+            box-shadow: 0 0 15px #b000ff;
+            border-color: #b000ff;
+        }
+
+        #stats-panel {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        #timer-display, #score-display {
+            background: rgba(25, 0, 50, 0.6);
+            padding: 10px;
+            border-radius: 8px;
+            flex: 1;
+            text-align: center;
+            box-shadow: inset 0 0 8px #6b00ff55;
+        }
+
+        #game-over-screen {
+            display: none;
+            animation: fadeIn 1s ease forwards;
+        }
+
+        #restart-button {
+            background: #3f006f;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            padding: 12px 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 0 15px #6b00ff;
+            transition: background 0.3s ease, transform 0.2s;
+        }
+
+        #restart-button:hover {
+            background: #6b00ff;
+            transform: scale(1.05);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @media (max-height: 700px) {
+            .font-big { font-size: 2rem; }
+            .font-mid { font-size: 1.2rem; }
+            #input-area { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-ui">
+            <div id="current-word-display" class="font-big"></div>
+            <input type="text" id="input-area" class="font-mid" autofocus autocomplete="off">
+            <div id="stats-panel">
+                <div id="timer-display" class="font-small">Time: 60</div>
+                <div id="score-display" class="font-small">Score: 0</div>
+            </div>
+        </div>
+
+        <div id="game-over-screen">
+            <div class="font-big" style="color:#ff5050;text-shadow:0 0 15px #ff0055;">Time's Up!</div>
+            <div id="final-score" class="font-mid">Your Score: 0</div>
+            <div id="best-score" class="font-mid" style="color:#50ff50;text-shadow:0 0 10px #00ff77;">Best: 0</div>
+            <div class="font-small" style="margin-top: 30px;">Press 'R' or Click to Restart</div>
+            <button id="restart-button" class="font-small">Restart</button>
+        </div>
+    </div>
+
+    <script>
+        const WORDS = [
+            "Bati2", "Kol 5ara", "Asra3", "Hmar", "Lek chu 8abe", "Bala mo5", 
+            "No bitches ya haram", "Oumak l seb3a", "Mout", "Raymond l gay","Fouad le 3m tentek?"
+        ];
+
+        const currentWordDisplay = document.getElementById('current-word-display');
+        const inputArea = document.getElementById('input-area');
+        const timerDisplay = document.getElementById('timer-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const gameUI = document.getElementById('game-ui');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const bestScoreDisplay = document.getElementById('best-score');
+        const restartButton = document.getElementById('restart-button');
+
+        let currentWord = "";
+        let score = 0;
+        let highScore = 0;
+        let gameTime = 60;
+        let startTime = null;
+        let gameInterval = null;
+        let gameOver = true;
+
+        function getRandomWord() {
+            return WORDS[Math.floor(Math.random() * WORDS.length)];
+        }
+
+        function resetGame() {
+            score = 0;
+            currentWord = getRandomWord();
+            inputArea.value = "";
+            startTime = Date.now();
+            gameOver = false;
+
+            gameUI.style.display = 'flex';
+            gameOverScreen.style.display = 'none';
+            currentWordDisplay.textContent = `Word: ${currentWord}`;
+            scoreDisplay.textContent = `Score: ${score}`;
+            inputArea.focus();
+
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(updateGame, 1000 / 60);
+        }
+
+        function updateGame() {
+            if (gameOver) return;
+            const elapsed = (Date.now() - startTime) / 1000;
+            const remaining = Math.max(0, Math.ceil(gameTime - elapsed));
+            timerDisplay.textContent = `Time: ${remaining}`;
+            if (remaining <= 0) endGame();
+
+            const inputText = inputArea.value.trim();
+            if (currentWord.startsWith(inputText)) {
+                inputArea.style.color = '#50ff50';
+            } else {
+                inputArea.style.color = '#ff5050';
+            }
+        }
+
+        function endGame() {
+            gameOver = true;
+            clearInterval(gameInterval);
+            if (score > highScore) highScore = score;
+
+            gameUI.style.display = 'none';
+            gameOverScreen.style.display = 'flex';
+            finalScoreDisplay.textContent = `Your Score: ${score}`;
+            bestScoreDisplay.textContent = `Best: ${highScore}`;
+            inputArea.value = "";
+        }
+
+        inputArea.addEventListener('keyup', (event) => {
+            if (gameOver) return;
+            const inputText = inputArea.value.trim();
+            if (event.key === 'Enter') {
+                if (inputText === currentWord) {
+                    score += 1;
+                    currentWord = getRandomWord();
+                    inputArea.value = "";
+                    currentWordDisplay.textContent = `Word: ${currentWord}`;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                } else {
+                    inputArea.value = "";
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (gameOver && (event.key === 'r' || event.key === 'R')) resetGame();
+        });
+
+        restartButton.addEventListener('click', resetGame);
+        resetGame();
+    </script>
+</body>
+</html>
